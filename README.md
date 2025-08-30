@@ -1,6 +1,6 @@
 # SaaS Attendance System
 
-A backend SaaS application for employee attendance system with multi-tenant architecture using NestJS, Prisma, Redis, and PostgreSQL.
+A full-stack SaaS application for employee attendance system with multi-tenant architecture. Backend built with NestJS, Prisma, Redis, PostgreSQL, and mobile app with Flutter.
 
 ## Main Features
 
@@ -18,9 +18,16 @@ A backend SaaS application for employee attendance system with multi-tenant arch
 - ✅ **Rate Limiting**: Protection from abuse
 - ✅ **File Upload**: Upload attendance photos and documents
 - ✅ **Swagger Documentation**: Complete API documentation
+- ✅ **Mobile App**: Cross-platform Flutter app for Android & iOS
+- ✅ **Offline Support**: Work offline with local data sync
+- ✅ **Push Notifications**: Real-time attendance reminders
+- ✅ **Biometric Authentication**: Fingerprint/Face ID login
+- ✅ **Location Tracking**: GPS-based attendance verification
+- ✅ **Photo Capture**: In-app camera for attendance photos
 
 ## Tech Stack
 
+### Backend
 - **Framework**: NestJS
 - **Database**: PostgreSQL with Prisma ORM
 - **Cache**: Redis
@@ -30,25 +37,49 @@ A backend SaaS application for employee attendance system with multi-tenant arch
 - **Documentation**: Swagger/OpenAPI
 - **Security**: Helmet, CORS, Rate Limiting
 
+### Mobile App
+- **Framework**: Flutter
+- **Language**: Dart
+- **State Management**: Provider/Riverpod
+- **HTTP Client**: Dio
+- **Local Storage**: SharedPreferences, Hive
+- **Biometric Auth**: local_auth
+- **Location Services**: geolocator
+- **Camera**: camera
+- **Push Notifications**: firebase_messaging
+
 ## Quick Start
 
 ### Prerequisites
 
+#### Backend
 - Node.js 18+ or Bun
 - PostgreSQL
 - Redis
+
+#### Mobile App
+- Flutter SDK 3.16+
+- Android Studio / Xcode
+- Dart SDK 3.2+
 
 ### Installation
 
 1. **Clone repository**
    ```bash
    git clone <repository-url>
-   cd nest-saas-attendance
+   cd saas-attendance-system
    ```
 
-2. **Install dependencies**
+2. **Backend Setup**
    ```bash
+   cd backend
    bun install
+   ```
+
+3. **Mobile App Setup**
+   ```bash
+   cd mobile
+   flutter pub get
    ```
 
 3. **Setup environment variables**
@@ -68,6 +99,7 @@ A backend SaaS application for employee attendance system with multi-tenant arch
 
 4. **Setup database**
    ```bash
+   cd backend
    # Generate Prisma client
    bunx prisma generate
 
@@ -78,8 +110,9 @@ A backend SaaS application for employee attendance system with multi-tenant arch
    bunx prisma db seed
    ```
 
-5. **Start application**
+5. **Start Backend**
    ```bash
+   cd backend
    # Development mode
    bun run start:dev
 
@@ -88,7 +121,17 @@ A backend SaaS application for employee attendance system with multi-tenant arch
    bun run start:prod
    ```
 
-Application will run at `http://localhost:3000`
+6. **Run Mobile App**
+   ```bash
+   cd mobile
+   # Android
+   flutter run -d android
+   
+   # iOS
+   flutter run -d ios
+   ```
+
+Backend will run at `http://localhost:3000`
 
 ## API Documentation
 
@@ -138,6 +181,24 @@ User (1) ──── (N) LeaveRequest
 User (1) ──── (N) OvertimeRequest
 Shift (1) ──── (N) UserSchedule
 ```
+
+## Mobile App Features
+
+### Core Features
+- **Authentication**: Login with email/password or biometric
+- **Attendance**: Clock in/out with GPS location and photo
+- **Dashboard**: View attendance history and statistics
+- **Leave Management**: Request and track leave applications
+- **Profile**: Update personal information and settings
+- **Notifications**: Push notifications for reminders
+
+### Technical Features
+- **Offline Mode**: Work without internet connection
+- **Data Sync**: Automatic sync when connection restored
+- **Biometric Auth**: Fingerprint/Face ID support
+- **Location Services**: GPS-based attendance verification
+- **Camera Integration**: Photo capture for attendance
+- **Push Notifications**: Real-time updates and reminders
 
 ## API Endpoints
 
@@ -209,27 +270,50 @@ Redis is used for:
 ### Project Structure
 
 ```
-src/
-├── common/                 # Shared decorators, constants
-├── config/                 # Configuration files
-├── dto/                    # Data Transfer Objects
-├── guards/                 # Authentication & authorization guards
-├── interfaces/             # TypeScript interfaces
-├── middleware/             # Custom middleware
-├── modules/                # Feature modules
-│   ├── auth/              # Authentication module
-│   ├── users/             # User management
-│   ├── companies/         # Company management
-│   ├── attendance/        # Attendance tracking
-│   ├── leaves/            # Leave management
-│   ├── subscriptions/     # Subscription management
-│   └── ...
-├── services/              # Shared services (Prisma, Redis, Cache)
-└── main.ts                # Application entry point
+saas-attendance-system/
+├── backend/                # NestJS Backend
+│   ├── src/
+│   │   ├── common/         # Shared decorators, constants
+│   │   ├── config/         # Configuration files
+│   │   ├── dto/            # Data Transfer Objects
+│   │   ├── guards/         # Authentication & authorization guards
+│   │   ├── interfaces/     # TypeScript interfaces
+│   │   ├── middleware/     # Custom middleware
+│   │   ├── modules/        # Feature modules
+│   │   │   ├── auth/       # Authentication module
+│   │   │   ├── users/      # User management
+│   │   │   ├── companies/  # Company management
+│   │   │   ├── attendance/ # Attendance tracking
+│   │   │   ├── leaves/     # Leave management
+│   │   │   ├── subscriptions/ # Subscription management
+│   │   │   └── ...
+│   │   ├── services/       # Shared services (Prisma, Redis, Cache)
+│   │   └── main.ts         # Application entry point
+│   ├── prisma/             # Database schema & migrations
+│   └── package.json        # Backend dependencies
+│
+├── mobile/                 # Flutter Mobile App
+│   ├── lib/
+│   │   ├── core/           # Core utilities, constants
+│   │   ├── data/           # Data layer (API, local storage)
+│   │   ├── domain/         # Business logic, entities
+│   │   ├── presentation/   # UI screens, widgets
+│   │   │   ├── screens/    # App screens
+│   │   │   ├── widgets/    # Reusable widgets
+│   │   │   └── providers/  # State management
+│   │   └── main.dart       # App entry point
+│   ├── assets/             # Images, fonts, configs
+│   └── pubspec.yaml        # Flutter dependencies
+│
+└── docs/                   # Documentation
+    ├── api/                # API documentation
+    ├── mobile/             # Mobile app guides
+    └── deployment/         # Deployment guides
 ```
 
 ### Available Scripts
 
+#### Backend
 ```bash
 # Development
 bun run start:dev          # Start with hot reload
@@ -250,6 +334,28 @@ bunx prisma db seed        # Seed database
 bun run test               # Run unit tests
 bun run test:e2e           # Run e2e tests
 bun run test:cov           # Run tests with coverage
+```
+
+#### Mobile App
+```bash
+# Development
+flutter run                 # Run on connected device
+flutter run -d android     # Run on Android device
+flutter run -d ios         # Run on iOS device
+
+# Build
+flutter build apk          # Build Android APK
+flutter build ios          # Build iOS app
+flutter build web          # Build web app
+
+# Testing
+flutter test               # Run unit tests
+flutter test integration_test/ # Run integration tests
+
+# Code Quality
+flutter analyze            # Analyze code
+flutter format .           # Format code
+flutter pub get            # Get dependencies
 ```
 
 ## Environment Variables
