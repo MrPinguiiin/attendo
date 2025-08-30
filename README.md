@@ -101,13 +101,13 @@ A full-stack SaaS application for employee attendance system with multi-tenant a
    ```bash
    cd backend
    # Generate Prisma client
-   bunx prisma generate
+   bun run db:generate
 
    # Run database migrations
-   bunx prisma db push
+   bun prisma db:push
 
    # (Optional) Seed database with initial data
-   bunx prisma db seed
+   bun prisma db:seed
    ```
 
 5. **Start Backend**
