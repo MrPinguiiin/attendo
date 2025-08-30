@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN  
+  COMPANY_ADMIN 
+  EMPLOYEE      
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  TRIALING
+  PAST_DUE 
+}
+
+enum WorkLocationType {
+  WFO 
+  WFH 
+  CLIENT_VISIT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  ON_LEAVE
+}
+
+enum LeaveType {
+  SICK
+  ANNUAL_LEAVE
+  PERMIT
+  UNPAID
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentType {
+  INCOMING_MAIL
+  OUTGOING_MAIL
+  INTERNAL_MEMO
+  CONTRACT
+}
+
+model Plan {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  price        Decimal
+  billingCycle BillingCycle
+  maxUsers     Int           
+  features     String[]
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id          String             @id @default(cuid())
+  status      SubscriptionStatus
+  startDate   DateTime
+  endDate     DateTime?
+  trialEndsAt DateTime?
+
+  companyId String  @unique 
+  company   Company @relation(fields: [companyId], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id                String   @id @default(uuid())
+  name              String
+  address           String?
+  phone             String?
+  registrationCode  String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  
+  users            User[]
+  officeLocations  OfficeLocation[]
+  leaveRequests    LeaveRequest[]
+  documents        Document[]
+  shifts           Shift[]
+  userSchedules    UserSchedule[]
+  overtimeRequests OvertimeRequest[]
+  announcements    Announcement[]
+
+  
+  subscription Subscription?
+  settings     CompanySettings?
+}
+
+
+model CompanySettings {
+  id                      String   @id @default(cuid())
+  latenessToleranceMinutes Int      @default(0)
+  overtimeRateWeekday     Float    @default(1.5)
+  overtimeRateWeekend     Float    @default(2.0)
+  allowWfh                Boolean  @default(true)
+  wfhClockInNeedsLocation Boolean  @default(false)
+
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+
+model OfficeLocation {
+  id           String   @id @default(uuid())
+  name         String
+  address      String
+  latitude     Float
+  longitude    Float
+  radiusMeters Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+
+model User {
+  id                      String    @id @default(uuid())
+  fullName                String
+  email                   String    @unique
+  password                String
+  role                    UserRole
+  isActive                Boolean   @default(true)
+  referenceFacePhotoUrl   String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  companyId String? 
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  attendances      Attendance[]
+  leaveRequests    LeaveRequest[]
+  approvedLeaves   LeaveRequest[]  @relation("ApprovedBy")
+  createdDocuments Document[]
+  userSchedules    UserSchedule[]
+  overtimeRequests OvertimeRequest[]
+  approvedOvertimes OvertimeRequest[] @relation("ApprovedBy")
+  createdAnnouncements Announcement[]
+}
+
+
+model Attendance {
+  id                 String    @id @default(uuid())
+  clockInTime        DateTime
+  clockOutTime       DateTime?
+  clockInLatitude    Float
+  clockInLongitude   Float
+  clockOutLatitude   Float?
+  clockOutLongitude  Float?
+  clockInPhotoUrl    String
+  clockOutPhotoUrl   String?
+  status             AttendanceStatus @default(PRESENT)
+  workLocation       WorkLocationType @default(WFO)
+  activityReport     String?   
+  visitNotes         String?   
+  isMockLocation     Boolean   @default(false)
+  hasDeveloperMode   Boolean   @default(false)
+  overtimeHours      Float?   
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model LeaveRequest {
+  id             String        @id @default(uuid())
+  leaveType      LeaveType
+  startDate      DateTime
+  endDate        DateTime
+  reason         String
+  attachmentUrl  String?
+  status         RequestStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId    String
+  company      Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  approvedById String?
+  approvedBy   User?   @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+}
+
+
+model Document {
+  id              String       @id @default(uuid())
+  documentNumber  String
+  title           String
+  type            DocumentType
+  fromOrTo        String
+  documentDate    DateTime
+  description     String?
+  fileUrl         String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  createdById     String
+  createdBy       User   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  companyId       String
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, documentNumber])
+}
+
+
+
+model Shift {
+  id        String   @id @default(cuid())
+  name      String   
+  startTime String   
+  endTime   String   
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  userSchedules UserSchedule[]
+}
+
+
+model UserSchedule {
+  id        String   @id @default(cuid())
+  date      DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  shiftId String
+  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete:Cascade)
+
+  @@unique([userId, date]) 
+}
+
+
+
+model OvertimeRequest {
+  id             String        @id @default(cuid())
+  date           DateTime
+  requestedHours Float
+  reason         String
+  status         RequestStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  approvedById String?
+  approvedBy   User?   @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+}
+
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+}
